@@ -1,17 +1,27 @@
-from coap import CoapServer, CoapResource
+from coap_debug import CoapServer, CoapResource
+
+VALUE_TYPE_NUMBER = 'number'
+VALUE_TYPE_STRING = 'string'
+VALUE_TYPE_BOOLEAN = 'boolean'
+
+VALUE_UNIT_PERCENT = 'percent'
+VALUE_UNIT_CELSIUS = 'celsius'
+VALUE_UNIT_LUX = 'lux'
 
 class WebThingServer(CoapServer):
     """Server to represent a Web Thing over CoAP."""
 
-    def __init__(self, ip, port, things):
-        super().__init__(self, ip, port)
-        self.things = things
-        for thing in self.things:
-            self.addThing(thing)
+    def __init__(self, ip, port):
+        super().__init__(ip, port)
+        self.things = []
 
     def addThing(self, thing):
+        print(thing)
+        print(thing.get_state())
         self.addResource(thing)
+        #TODO besserer Zugriff
         for property_ in thing.properties:
+            property_ = thing.properties[property_]
             self.addResource(property_)
         for action in thing.actions:
             self.addResource(action)
@@ -32,8 +42,8 @@ class Thing(CoapResource):
         self.description = description
         self.properties = {}
         self.actions = {}
-        self.href = "/things/" + self.name
-        super().__init__(self, self.href, server, self.get_state, None)
+        self.href = "things/" + self.name
+        super().__init__(self.href, server, self.get_state, None)
 
     def get_state(self):
         """
@@ -45,7 +55,7 @@ class Thing(CoapResource):
             'name': self.name,
             'type': self.type,
             'properties': self.get_property_states(),
-            'actions': {action.name: action.description} for name, description in self.actions,
+            'actions': {action.name: action.description for name, description in self.actions},
             'href': self.href
         }
 
@@ -54,15 +64,20 @@ class Thing(CoapResource):
         Return the property states as a dictionary
         """
         property_states = {}
+        #TODO besserer Zugriff
         for property_ in self.properties:
+            property_ = self.properties[property_]
             property_states[property_.name] = {
                 'type': property_.type,
                 'unit': property_.unit,
-                'description': property_.descritpion
+                'description': property_.description
             }
         return property_states
 
-    def addProperty(self, property_):
+    def addProperty(self, name, type_="boolean", unit="", description="", \
+                    handle_get=None, handle_put=None):
+        property_ = Property(self.server, self, name, type, unit, description, \
+                             handle_get, handle_put)
         self.properties[property_.name] = property_
 
     def removeProperty(self, property_):
@@ -75,50 +90,6 @@ class Thing(CoapResource):
     def removeAction(self, action):
         self.actions.pop(action.name)
         self.server.deleteResource(action.href)
-
-class Unit(object):
-    def __init__(self, unit):
-        self.name = unit
-        if unit = None:
-            self.symbol = ''
-        elif unit = 'percent':
-            self.symbol = '%'
-        elif unit = 'celsius':
-            self.symbol = '°C'
-        elif unit = 'lux':
-            self.symbol = ' lux'
-
-    def __str__(self):
-        return self.symbol
-
-class Value(object):
-    """A Value that can be held by a Property"""
-
-    def __init__(self, value, type_, unit=None):
-        """
-        Initialize the object.
-
-        value -- the value of the Value object
-        type -- the value's type
-        unit -- the unit of the value, if any
-        """
-        if type_ == VALUE_TYPE_NUMBER:
-            self.value = float(value)
-        elif type_ == VALUE_TYPE_STRING:
-            self.value = str(value)
-        elif type_ == VALUE_TYPE_BOOLEAN:
-            self.value = bool(value)
-        else:
-            #TypeError
-
-        self.type = type_
-        self.unit = unit
-
-    def get(self):
-        return self.value
-
-    def __str__(self):
-        return str(self.value) + str(self.unit)
 
 class Property(CoapResource):
     """A Web Thing Property."""
@@ -134,10 +105,12 @@ class Property(CoapResource):
         """
         self.thing = thing
         self.name = name
-        self.value = value
+        self.value = None
+        self.type = type_
+        self.unit = unit
         self.description = description
         self.href = self.thing.href + "/properties/" + self.name
-        super().__init__(self, self.href, server, handle_get, handle_put)
+        super().__init__(self.href, server, handle_get, handle_put)
 
 class Action(CoapResource):
     """A Web Thing Action."""
