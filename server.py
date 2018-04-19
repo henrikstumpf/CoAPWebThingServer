@@ -57,7 +57,7 @@ class Thing(CoapResource):
             'properties': self.get_property_states(),
             'actions': {action.name: action.description for name, description in self.actions},
             'href': self.href
-        }
+        }, 50
 
     def get_property_states(self):
         """
@@ -70,13 +70,14 @@ class Thing(CoapResource):
             property_states[property_.name] = {
                 'type': property_.type,
                 'unit': property_.unit,
-                'description': property_.description
+                'description': property_.description,
+                'href': property_.href
             }
         return property_states
 
     def addProperty(self, name, type_="boolean", unit="", description="", \
                     handle_get=None, handle_put=None):
-        property_ = Property(self.server, self, name, type, unit, description, \
+        property_ = Property(self.server, self, name, type_, unit, description, \
                              handle_get, handle_put)
         self.properties[property_.name] = property_
 

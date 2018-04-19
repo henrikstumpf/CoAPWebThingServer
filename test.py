@@ -36,11 +36,11 @@ def set_level(level):
 webthing_server = WebThingServer('192.168.71.34', 5684)
 
 sensor1 = Thing(webthing_server, 'Sensor1', description="temperature sensor")
-sensor1.addProperty('temp', 'number', 'celsius', 'temperature in degress celsius', \
+sensor1.addProperty('temp', 'number', 'celsius', 'temperature in degrees celsius', \
                     get_random_number)
 
 sensor2 = Thing(webthing_server, 'Sensor2', description="temperature sensor")
-sensor2.addProperty('temp', 'number', 'celsius', 'temperature in degress celsius', \
+sensor2.addProperty('temp', 'number', 'celsius', 'temperature in degrees celsius', \
                     get_random_number)
 
 sensor3 =  Thing(webthing_server, 'Sensor3', description="temperature sensor")
